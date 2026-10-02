@@ -1,7 +1,8 @@
 
-_rtable_operand = {}
-
-function _rtable_operand.is_rtable() return true end
+_rtable_operand = {
+    func = nil,
+    args = {}
+}
 
 --!
 -- this function gives any tables common operator overloads:
@@ -10,149 +11,138 @@ function _rtable_operand.is_rtable() return true end
 --   Feed the left side operand table into a right side operand function, known as piping or currying
 --
 -- @code
--- import("@addon.rats-utils.rtable")
--- rtable({1, 2, 3, 4})
---     | {table.slice, 2, 3}
---     | table.reverse
+-- import("@addon.rats-utils.rtable", {alias = "t"})
+-- {1, 2, 3, 4}
+--     | t(table.slice, 2, 3)
+--     | t(table.reverse)
 -- -- OR
--- rtable({1, 2, 3, 4})
---     | rtable.slice(2, 3)
---     | rtable.reverse()
+-- {1, 2, 3, 4}
+--     | t.slice(2, 3)
+--     | t.reverse()
 -- @endcode
 --
--- @note Use `pack = true` to use pipes on multiple returned values, not just the first one
---
--- @note `rtable` doesn't create another instance, it modifies metadata of its input table
-function main(subject)
-    if type(subject) == "nil" then
-        subject = {}
-    end
-    if type(subject) == "table" then
-        if subject.is_rtable then return subject end
-        return table.inherit2(subject, _rtable_operand)
-    end
-    return subject
+function main(func, ...)
+    return _rtable_operand:new(func, ...)
 end
 
-function _call(subject, func, pack, ...)
-    local result = table.pack(func(subject, ...))
-    for _, item in ipairs(result) do
-        if type(item) == "table" then
-            main(item)
-        end
-    end
-    if pack then
-        return main(table.unwrap(result))
-    end
-    return table.unpack(result)
+function _rtable_operand:new(func, ...)
+    local result = table.inherit({}, self)
+    result.func = func
+    result.args = {...}
+    return result
 end
 
-function _rtable_operand.__bor(subject, right)
-    if type(right) == "function" then
-        return _call(subject, right, false)
-    elseif type(right) == "table" and type(right[1]) == "function" then
-        return _call(subject, right[1], right.pack, table.unpack(table.slice(right, 2)))
-    else
-        raise("Right hand side operand of rtable was invalid: " .. string.serialize(right))
-    end
+function _rtable_operand.__bor(left, right)
+    return right.func(left, table.unpack(right.args))
 end
 
-function append(...)              local args = {...}; return function(subject) return table.append(         subject, table.unpack(args)) end end
-function clear(...)               local args = {...}; return function(subject) return table.clear(          subject, table.unpack(args)) end end
-function clone(...)               local args = {...}; return function(subject) return table.clone(          subject, table.unpack(args)) end end
-function concat(...)              local args = {...}; return function(subject) return table.concat(         subject, table.unpack(args)) end end
-function contains(...)            local args = {...}; return function(subject) return table.contains(       subject, table.unpack(args)) end end
-function copy(...)                local args = {...}; return function(subject) return table.copy(           subject, table.unpack(args)) end end
-function copy2(...)               local args = {...}; return function(subject) return table.copy2(          subject, table.unpack(args)) end end
-function copy_inline(...)         local args = {...}; return function(subject) return table.copy2(          subject, table.unpack(args)) end end
-function create(...)              local args = {...}; return function(subject) return table.create(         subject, table.unpack(args)) end end
-function empty(...)               local args = {...}; return function(subject) return table.empty(          subject, table.unpack(args)) end end
-function find_first_if(...)       local args = {...}; return function(subject) return table.find_first_if(  subject, table.unpack(args)) end end
-function find_first(...)          local args = {...}; return function(subject) return table.find_first(     subject, table.unpack(args)) end end
-function find_if(...)             local args = {...}; return function(subject) return table.find_if(        subject, table.unpack(args)) end end
-function find(...)                local args = {...}; return function(subject) return table.find(           subject, table.unpack(args)) end end
-function getn(...)                local args = {...}; return function(subject) return table.getn(           subject, table.unpack(args)) end end
-function imap(...)                local args = {...}; return function(subject) return table.imap(           subject, table.unpack(args)) end end
-function inherit(...)             local args = {...}; return function(subject) return table.inherit(        subject, table.unpack(args)) end end
-function inherit2(...)            local args = {...}; return function(subject) return table.inherit2(       subject, table.unpack(args)) end end
-function inherit_inline(...)      local args = {...}; return function(subject) return table.inherit2(       subject, table.unpack(args)) end end
-function insert(...)              local args = {...}; return function(subject) return table.insert(         subject, table.unpack(args)) end end
-function is_array(...)            local args = {...}; return function(subject) return table.is_array(       subject, table.unpack(args)) end end
-function is_dictionary(...)       local args = {...}; return function(subject) return table.is_dictionary(  subject, table.unpack(args)) end end
-function join(...)                local args = {...}; return function(subject) return table.join(           subject, table.unpack(args)) end end
-function join2(...)               local args = {...}; return function(subject) return table.join2(          subject, table.unpack(args)) end end
-function join_inline(...)         local args = {...}; return function(subject) return table.join2(          subject, table.unpack(args)) end end
-function keys(...)                local args = {...}; return function(subject) return table.keys(           subject, table.unpack(args)) end end
-function map(...)                 local args = {...}; return function(subject) return table.map(            subject, table.unpack(args)) end end
-function maxn(...)                local args = {...}; return function(subject) return table.maxn(           subject, table.unpack(args)) end end
-function move(...)                local args = {...}; return function(subject) return table.move(           subject, table.unpack(args)) end end
-function orderkeys(...)           local args = {...}; return function(subject) return table.orderkeys(      subject, table.unpack(args)) end end
-function orderpairs(...)          local args = {...}; return function(subject) return table.orderpairs(     subject, table.unpack(args)) end end
-function pack(...)                local args = {...}; return function(subject) return table.pack(           subject, table.unpack(args)) end end
-function remove_if(...)           local args = {...}; return function(subject) return table.remove_if(      subject, table.unpack(args)) end end
-function remove(...)              local args = {...}; return function(subject) return table.remove(         subject, table.unpack(args)) end end
-function reverse_unique(...)      local args = {...}; return function(subject) return table.reverse_unique( subject, table.unpack(args)) end end
-function reverse(...)             local args = {...}; return function(subject) return table.reverse(        subject, table.unpack(args)) end end
-function shallow_join(...)        local args = {...}; return function(subject) return table.shallow_join(   subject, table.unpack(args)) end end
-function shallow_join2(...)       local args = {...}; return function(subject) return table.shallow_join2(  subject, table.unpack(args)) end end
-function shallow_join_inline(...) local args = {...}; return function(subject) return table.shallow_join2(  subject, table.unpack(args)) end end
-function slice(...)               local args = {...}; return function(subject) return table.slice(          subject, table.unpack(args)) end end
-function swap(...)                local args = {...}; return function(subject) return table.swap(           subject, table.unpack(args)) end end
-function to_array(...)            local args = {...}; return function(subject) return table.to_array(       subject, table.unpack(args)) end end
-function unique(...)              local args = {...}; return function(subject) return table.unique(         subject, table.unpack(args)) end end
-function unpack(...)              local args = {...}; return function(subject) return table.unpack(         subject, table.unpack(args)) end end
-function unwrap(...)              local args = {...}; return function(subject) return table.unwrap(         subject, table.unpack(args)) end end
-function values(...)              local args = {...}; return function(subject) return table.values(         subject, table.unpack(args)) end end
-function wrap_lock(...)           local args = {...}; return function(subject) return table.wrap_lock(      subject, table.unpack(args)) end end
-function wrap_unlock(...)         local args = {...}; return function(subject) return table.wrap_unlock(    subject, table.unpack(args)) end end
-function wrap(...)                local args = {...}; return function(subject) return table.wrap(           subject, table.unpack(args)) end end
+function append(...)              return main(table.append,         ...) end
+function clear(...)               return main(table.clear,          ...) end
+function clone(...)               return main(table.clone,          ...) end
+function contains(...)            return main(table.contains,       ...) end
+function empty(...)               return main(table.empty,          ...) end
+function find_first_if(...)       return main(table.find_first_if,  ...) end
+function find_first(...)          return main(table.find_first,     ...) end
+function find_if(...)             return main(table.find_if,        ...) end
+function find(...)                return main(table.find,           ...) end
+function getn(...)                return main(table.getn,           ...) end
+function imap(...)                return main(table.imap,           ...) end
+function inherit(...)             return main(table.inherit,        ...) end
+function inherit2(...)            return main(table.inherit2,       ...) end
+function inherit_inline(...)      return main(table.inherit2,       ...) end
+function is_array(...)            return main(table.is_array,       ...) end
+function is_dictionary(...)       return main(table.is_dictionary,  ...) end
+function join_inline(...)         return main(table.join2,          ...) end
+function join(...)                return main(table.join,           ...) end
+function join2(...)               return main(table.join2,          ...) end
+function keys(...)                return main(table.keys,           ...) end
+function map(...)                 return main(table.map,            ...) end
+function maxn(...)                return main(table.maxn,           ...) end
+function orderkeys(...)           return main(table.orderkeys,      ...) end
+function orderpairs(...)          return main(table.orderpairs,     ...) end
+function pack(...)                return main(table.pack,           ...) end
+function remove_if(...)           return main(table.remove_if,      ...) end
+function reverse_unique(...)      return main(table.reverse_unique, ...) end
+function reverse(...)             return main(table.reverse,        ...) end
+function shallow_join(...)        return main(table.shallow_join,   ...) end
+function shallow_join2(...)       return main(table.shallow_join2,  ...) end
+function shallow_join_inline(...) return main(table.shallow_join2,  ...) end
+function slice(...)               return main(table.slice,          ...) end
+function swap(...)                return main(table.swap,           ...) end
+function to_array(...)            return main(table.to_array,       ...) end
+function unique(...)              return main(table.unique,         ...) end
+function unwrap(...)              return main(table.unwrap,         ...) end
+function values(...)              return main(table.values,         ...) end
+function wrap_lock(...)           return main(table.wrap_lock,      ...) end
+function wrap_unlock(...)         return main(table.wrap_unlock,    ...) end
+function wrap(...)                return main(table.wrap,           ...) end
 
-function last() return function(subject)
-    return subject[#subject]
-end end
+function concat(...) return main(function(...) table.concat(...) end, ...) end
+function create(...) return main(function(...) table.create(...) end, ...) end
+function remove(...) return main(function(...) table.remove(...) end, ...) end
+function insert(...) return main(function(...) table.insert(...) end, ...) end
+function move(...)   return main(function(...) table.move(...)   end, ...) end
 
-function sort(comparer) return function(subject)
-    local result = table.clone(subject)
-    table.sort(result, comparer)
-    return main(result)
-end end
+function last()
+    return main(function(subject)
+        return subject[#subject]
+    end)
+end
 
-function filter(predicate) return function(subject)
-    local result = table.find_if(subject, predicate) or {}
-    for i = 1, #result, 1 do
-        result[i] = subject[result[i]]
-    end
-    return main(result)
-end end
+function sort(...)
+    return main(function(subject, comparer)
+        local result = table.clone(subject)
+        table.sort(result, comparer)
+        return result
+    end, ...)
+end
 
-function default_inline(from) return function(subject)
-    subject = subject or {}
-    for k, v in pairs(from) do
-        if type(subject[k]) == "table" and type(v) == "table" then
-            table.default_from(subject[k], v)
-        elseif type(subject[k]) == "nil" then
-            subject[k] = v
+function filter(...)
+    return main(function(subject, predicate)
+        local result = table.find_if(subject, predicate) or {}
+        for i = 1, #result, 1 do
+            result[i] = subject[result[i]]
         end
-    end
-    return subject
-end end
+        return result
+    end, ...)
+end
 
-function default(from, depth) return function(subject)
-    return main(subject) | clone(depth) | default_inline(from)
-end end
-
-function merge_inline(from) return function(subject)
-    subject = subject or {}
-    for k, v in pairs(from) do
-        if type(subject[k]) == "table" and type(v) == "table" then
-            table.merge_from(subject[k], v)
-        else
-            subject[k] = v
+function default_inline(...)
+    return main(function(subject, from)
+        subject = subject or {}
+        for k, v in pairs(from) do
+            if type(subject[k]) == "table" and type(v) == "table" then
+                table.default_from(subject[k], v)
+            elseif type(subject[k]) == "nil" then
+                subject[k] = v
+            end
         end
-    end
-    return subject
-end end
+        return subject
+    end, ...)
+end
 
-function merge(from, depth) return function(subject)
-    return main(subject) | clone(depth) | merge_inline(from)
-end end
+function default(...)
+    return main(function(subject, from, depth)
+        return subject | clone(depth) | default_inline(from)
+    end, ...)
+end
+
+function merge_inline(...)
+    return main(function(subject, from)
+        subject = subject or {}
+        for k, v in pairs(from) do
+            if type(subject[k]) == "table" and type(v) == "table" then
+                table.merge_from(subject[k], v)
+            else
+                subject[k] = v
+            end
+        end
+        return subject
+    end, ...)
+end
+
+function merge(...)
+    return main(function(subject, from, depth)
+        return subject | clone(depth) | merge_inline(from)
+    end, ...)
+end

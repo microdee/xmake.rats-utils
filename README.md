@@ -24,20 +24,18 @@ Give any table common operator overloads:
   Feed the left side operand table into a right side operand function, known as piping or currying.
 
 ```lua
-import("@addon.rats-utils.rtable")
-rtable({1, 2, 3, 4})
-    | {table.slice, 2, 3}
-    | table.reverse
+import("@addon.rats-utils.rtable", {alias = "t"})
+local result = {1, 2, 3, 4}
+    | t(table.slice, 2, 3)
+    | t(table.reverse)
 -- OR
-rtable({1, 2, 3, 4})
-    | rtable.slice(2, 3)
-    | rtable.reverse()
+local result = {1, 2, 3, 4}
+    | t.slice(2, 3)
+    | t.reverse()
 ```
-> [!IMPORTANT]
-> Use `pack = true` to use pipes on multiple returned values, not just the first one
 
-> [!IMPORTANT]
-> `rtable` doesn't create another instance, it modifies metadata of its input table
+> [!NOTE]
+> Discarding the results of `|` or apparently any operator is a syntax error in lua. I guess it's an opinionated stance about how these operators shouldn't have side effects. In any case it means that free standing expressions like `a | t.append(b)` are not allowed.
 
 ### `rpath`
 
