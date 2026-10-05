@@ -28,6 +28,7 @@
 function add_step(graph_name, name, relations, func)
     add_values("desc_step_queue", function(target)
         import("@self.rsteps")
+        relations.set_fenv = true
         rsteps.add_step(target, graph_name, name, relations, func)
     end)
 end
@@ -88,6 +89,6 @@ function add_sequence(graph_name, ...)
     local args = {...}
     add_values("desc_step_queue", function(target)
         import("@self.rsteps")
-        rsteps.add_sequence(target, graph_name, table.unpack(args))
+        rsteps.add_sequence_fenv(target, graph_name, table.unpack(args))
     end)
 end

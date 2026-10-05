@@ -39,6 +39,9 @@ _step = {
     -- finished.
     --
     triggered_by = {},
+
+    --! Call debug.setfenv(step.func, debug.getfenv(1)) on given function. Don't set manually.
+    set_fenv = false
 }
 
 function _step:new(name)
@@ -49,6 +52,7 @@ end
 
 function _step:merge(other)
     self.func = other.func or self.func
+    self.set_fenv = self.set_fenv or other.set_fenv
     table.join2(self.depends_on    ,other.depends_on    | t.wrap())
     table.join2(self.dependent_for ,other.dependent_for | t.wrap())
     table.join2(self.before        ,other.before        | t.wrap())
@@ -395,6 +399,11 @@ function _step_graph:with_sequence(name, options, ...)
     return self
 end
 
+function _step_graph:with_sequence_fenv(name, options, ...)
+    options.set_fenv = true
+    self:with_sequence(name, options, ...)
+end
+
 function forward() return 2 end
 function backward() return 1 end
 
@@ -511,8 +520,10 @@ function _step_graph:invoke(...)
         for _, stepname in ipairs(ordered) do
             local step = self.steps[stepname]
             if step.func then
-                cprint("${green}-------- %s --------", stepname)
-                debug.setfenv(step.func, debug.getfenv(1))
+                cprint("${green}-------- " .. stepname)
+                if step.set_fenv then
+                    debug.setfenv(step.func, debug.getfenv(1))
+                end
                 local response = step.func(self.context, step, self)
                 if response then
                     cprint("${red}%s has aborted this run.", stepname)
@@ -526,6 +537,7 @@ function _step_graph:invoke(...)
         for _, c in ipairs(cycle) do
             print(c)
         end
+        print(visitor.invoke_graph:dump())
         raise("Cyclic steps found in step-graph")
     end
 end
@@ -636,4 +648,9 @@ end
 function add_sequence(target, graph_name, ...)
     local steps = get_steps(target, graph_name)
     return steps:with_sequence(...)
+end
+
+function add_sequence_fenv(target, graph_name, ...)
+    local steps = get_steps(target, graph_name)
+    return steps:with_sequence_fenv(...)
 end
