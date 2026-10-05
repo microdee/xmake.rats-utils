@@ -56,9 +56,7 @@ if import then
 end
 
 function _rpath_operand.__div(self, next)
-    local result = table.clone(self, 100)
-    result.p = resolve(path.join(self.p, next), result.options)
-    return result
+    return rpath(path.join(self.p, next), self.options)
 end
 
 function _rpath_operand.__concat(lh, rh)
