@@ -2,16 +2,17 @@
 
 Commonly usable very generic utilities for [xmake](https://xmake.io) for other xmake addons.
 
-Manual installation before it gets canonized in XRepo:
+Through xrepo in your `xmake.lua`
+
+```lua
+add_repositories("xrepo-md https://github.com/microdee/xmake-repo.git md") -- until it's not yet available in mainline xrepo
+add_addons("rats-utils")
+```
+
+Or manual installation:
 
 ```
 xmake addon --install github:microdee/xmake.rats-utils
-```
-
-Once it's available on XRepo you can just do
-
-```lua
-add_addons("rats-utils")
 ```
 
 ## Features
@@ -86,17 +87,17 @@ target("rsteps-tests")
     set_kind("phony")
     add_rules("@addon/rats-utils/rsteps") -- allows more easy scheduling of steps from description scope
 
-    add_step("basic-graph", "1st", {}, function(ctx)
+    step("basic-graph", "1st", {}, function(ctx)
         print(1)
     end)
-    add_step("basic-graph", "2nd", { depends_on = "1st" }, function(ctx)
+    step("basic-graph", "2nd", { depends_on = "1st" }, function(ctx)
         print(2)
     end)
-    add_step("basic-graph", "3rd", { triggered_by = "2nd" }, function(ctx)
+    step("basic-graph", "3rd", { triggered_by = "2nd" }, function(ctx)
         print(3)
     end)
-    add_step("basic-graph", "4th", { depends_on = "2nd", triggers = "5th" }) -- function is optional!
-    add_step("basic-graph", "5th", {}, function(ctx)
+    step("basic-graph", "4th", { depends_on = "2nd", triggers = "5th" }) -- function is optional!
+    step("basic-graph", "5th", {}, function(ctx)
         print(5)
     end)
     on_config(function(target)
@@ -105,7 +106,7 @@ target("rsteps-tests")
     end)
 ```
 
-Setting up a chain of tasks like this however can be pretty tedious, especially when their depency graph is just a straight line. For that reason you also have `add_sequence` convenience function:
+Setting up a chain of tasks like this however can be pretty tedious, especially when their depency graph is just a straight line. For that reason you also have `sequence` convenience function:
 
 ```lua
 target("rsteps-tests")
@@ -114,7 +115,7 @@ target("rsteps-tests")
 
     -- steps are woven together via dependency by default, so last step depends on previous one
     -- and all steps are executed if the last step is invoked
-    add_sequence("sequence-graph-dep", "seq", {}, 
+    sequence("sequence-graph-dep", "seq", {}, 
         function() print(1) end,
         function() print(2) end,
         function() print(3) end,
@@ -123,7 +124,7 @@ target("rsteps-tests")
     
     -- OR steps may be woven together via triggering, so first step triggers the second
     -- and all steps are executed if the first step is invoked
-    add_sequence("sequence-graph-trig", "seq", { trigger = true },
+    sequence("sequence-graph-trig", "seq", { trigger = true },
         function() print(1) end,
         function() print(2) end,
         function() print(3) end,
@@ -137,7 +138,7 @@ target("rsteps-tests")
     end)
 ```
 
-You can also name steps individually in `add_sequence`, which is actually recommended for publicly hookable step-graphs. The following example also demonstrates the usability in rules. `add_sequence` (and `add_step`) has the same usage in both description and script scopes.
+You can also name steps individually in `sequence`, which is actually recommended for publicly hookable step-graphs. The following example also demonstrates the usability in rules. `add_sequence` (and `add_step`) has the same usage in both description and script scopes.
 
 ```lua
 rule("engine-rule")
@@ -160,7 +161,7 @@ rule("engine-rule")
 target("engine")
     set_kind("phony")
     add_rules("engine-rule")
-    add_step(
+    step(
         "engine", "spark_plug",
         {
             dependent_for = "combust",
