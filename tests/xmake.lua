@@ -1,4 +1,7 @@
 
+add_repositories("xrepo-md https://github.com/microdee/xmake-repo.git md")
+add_addons("rats-utils")
+
 includes("@addon/rats-utils/rsteps")
 
 target("rtable-tests")
