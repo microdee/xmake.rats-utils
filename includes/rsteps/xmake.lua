@@ -5,7 +5,7 @@
 -- 
 -- @code
 -- includes("@addon/rats-utils/rsteps")
--- step("manifest",
+-- add_step("manifest",
 --     "make-manifest",
 --     {
 --         depends_on = {"elaborate-file-structure", "get-permissions"},
@@ -25,7 +25,7 @@
 --       done at later point (like `on_config` or later). Steps can be individually invoked at any
 --       time, and other steps can use this knowledge when they're setting up their relations.
 --
-function step(graph_name, name, relations, func)
+function add_step(graph_name, name, relations, func)
     add_values("desc_step_queue", function(target)
         import("@self.rsteps")
         relations.set_fenv = true
@@ -39,7 +39,7 @@ end
 -- 
 -- @code
 -- includes("@addon/rats-utils/rsteps")
--- sequence("manifest",
+-- add_sequence("manifest",
 --     "step-name", {},
 --     function() --[[ do stuff ]] end, -- "step-name"
 --     function() --[[ do stuff ]] end, -- "step-name2"
@@ -68,12 +68,12 @@ end
 -- you can compose the sequence with triggering (running the first will run the rest) via the
 -- second argument (options)
 -- @code
--- sequence("manifest", "step-name", {trigger = true}, ...)
+-- add_sequence("manifest", "step-name", {trigger = true}, ...)
 -- @endcode
 -- 
 -- The second argument can also set up relations to all given steps here
 -- @code
--- sequence("manifest", "step-name", {triggered_by = "something-else"}, ...)
+-- add_sequence("manifest", "step-name", {triggered_by = "something-else"}, ...)
 -- @endcode
 -- Now `something-else` triggers this whole sequence.
 -- 
@@ -85,7 +85,7 @@ end
 --       done at later point (like `on_config` or later). Steps can be individually invoked at any
 --       time, and other steps can use this knowledge when they're setting up their relations.
 --
-function sequence(graph_name, ...)
+function add_sequence(graph_name, ...)
     local args = {...}
     add_values("desc_step_queue", function(target)
         import("@self.rsteps")

@@ -22,21 +22,21 @@ target("rsteps-tests")
     set_kind("phony")
     -- set_enabled(false)
     add_rules("@addon/rats-utils/rsteps")
-    step("basic-graph", "1st", {}, function(ctx)
+    add_step("basic-graph", "1st", {}, function(ctx)
         import("@addon.rats-utils.rtable")
         print({1, 2, 3, 4} | rtable.slice(3))
     end)
-    step("basic-graph", "2nd", { depends_on = "1st" }, function(ctx)
+    add_step("basic-graph", "2nd", { depends_on = "1st" }, function(ctx)
         print(2)
     end)
-    step("basic-graph", "3rd", { triggered_by = "2nd" }, function(ctx)
+    add_step("basic-graph", "3rd", { triggered_by = "2nd" }, function(ctx)
         print(3)
     end)
-    step("basic-graph", "4th", { depends_on = "2nd", triggers = "5th", after = "3rd" })
-    step("basic-graph", "5th", {}, function(ctx)
+    add_step("basic-graph", "4th", { depends_on = "2nd", triggers = "5th", after = "3rd" })
+    add_step("basic-graph", "5th", {}, function(ctx)
         print(5)
     end)
-    sequence("sequence-graph-dep", "seq", {},
+    add_sequence("sequence-graph-dep", "seq", {},
         function() print(1) end,
         function() print(2) end,
         function() print(3) end,
@@ -45,7 +45,7 @@ target("rsteps-tests")
         function() print(6) end,
         function() print(7) end
     )
-    sequence("sequence-graph-trig", "seq", { trigger = true },
+    add_sequence("sequence-graph-trig", "seq", { trigger = true },
         function() print(1) end,
         function() print(2) end,
         function() print(3) end,
