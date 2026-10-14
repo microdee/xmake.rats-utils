@@ -77,11 +77,11 @@ function wrap_lock(...)           return main(table.wrap_lock,      ...) end
 function wrap_unlock(...)         return main(table.wrap_unlock,    ...) end
 function wrap(...)                return main(table.wrap,           ...) end
 
-function concat(...) return main(function(...) table.concat(...) end, ...) end
-function create(...) return main(function(...) table.create(...) end, ...) end
-function remove(...) return main(function(...) table.remove(...) end, ...) end
-function insert(...) return main(function(...) table.insert(...) end, ...) end
-function move(...)   return main(function(...) table.move(...)   end, ...) end
+function concat(...) return main(function(...) return table.concat(...) end, ...) end
+function create(...) return main(function(...) return table.create(...) end, ...) end
+function remove(...) return main(function(...) return table.remove(...) end, ...) end
+function insert(...) return main(function(...) return table.insert(...) end, ...) end
+function move(...)   return main(function(...) return table.move(...)   end, ...) end
 
 function last()
     return main(function(subject)
