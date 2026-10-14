@@ -94,8 +94,8 @@ end
 -- local publish = rsteps.step("publish", { depends_on = {"make-manifest", "sign"} }, function()
 --     -- publish
 -- end)
--- some_graph:with_steps(make_manifest, publish)
--- some_other_graph:with_steps(make_manifest, publish)
+-- some_graph:add_steps(make_manifest, publish)
+-- some_other_graph:add_steps(make_manifest, publish)
 -- @endcode
 -- 
 -- @note Relations can be scheduled at any order. Even if a dependency is not yet fully scheduled
@@ -103,7 +103,7 @@ end
 --       step scheduled at a later point. The important bit is that by the time one or more steps
 --       are invoked, all components had their chance to schedule their steps in the graph.
 -- @note Usually scheduling is done earliest possible like `on_load` and invocation of steps are
---       done at later point (like `on_config` or later). Steps can be individually invoked at any
+--       done at later point (like `after_load` or later). Steps can be individually invoked at any
 --       time, and other steps can use this knowledge when they're setting up their relations.
 --
 function step(name, relations, func)
@@ -232,24 +232,40 @@ function stop() return "stop" end
 --!
 -- Add a step to this step-graph
 -- @code
--- mystepgraph:add(
---     "make-manifest",
---     {
---         depends_on = {"elaborate-file-structure", "get-permissions"},
---         triggers = "sign",
---     },
---     function()
---         -- make the manifest
---     end
--- )
+-- mystepgraph
+--     :add(
+--         "make-manifest",
+--         {
+--             depends_on = {"elaborate-file-structure", "get-permissions"},
+--             triggers = "sign",
+--         },
+--         function()
+--             -- make the manifest
+--         end
+--     )
+--     :add(
+--         "get-permissions",
+--         {},
+--         function()
+--             -- do some permission stuff
+--         end
+--     )
 -- @endcode
+-- 
+-- @param step: `add(1)` add one reusable step to the graph
+-- 
+-- @param      name: `add(3)` name of a new step
+-- @param relations: `add(3)` the relations of a new step
+-- @param  function: `add(3)` the function to be executed for this step
+-- 
+-- @return The step-graph for fluent API
 -- 
 -- @note Relations can be scheduled at any order. Even if a dependency is not yet fully scheduled
 --       the step-graph can already create an empty record for it, which can be filled in by the
 --       step scheduled at a later point. The important bit is that by the time one or more steps
 --       are invoked, all components had their chance to schedule their steps in the graph.
 -- @note Usually scheduling is done earliest possible like `on_load` and invocation of steps are
---       done at later point (like `on_config` or later). Steps can be individually invoked at any
+--       done at later point (like `after_load` or later). Steps can be individually invoked at any
 --       time, and other steps can use this knowledge when they're setting up their relations.
 --
 function _step_graph:add(...)
@@ -279,27 +295,26 @@ function _step_graph:add(...)
             raise("Cyclic steps found in step-graph")
         end
     end
-    return new_step
+    return self
 end
 
 --!
--- Add multiple steps to this stepgraph in one go:
+-- Add multiple reusable steps to this stepgraph:
 -- @code
--- mystepgraph:with_steps(
---     rsteps.step(
---         "make-manifest",
---         {
---             depends_on = {"elaborate-file-structure", "get-permissions"},
---             triggers = "sign",
---         },
---         function()
---             -- make the manifest
---         end
---     ),
---     rsteps.step("publish", { depends_on = {"make-manifest", "sign"} }, function()
---         -- publish
---     end)
+-- local make_manifest = rsteps.step(
+--     "make_manifest",
+--     {
+--         depends_on = {"elaborate-file-structure", "get-permissions"},
+--         triggers = "sign",
+--     },
+--     function()
+--         -- make the manifest
+--     end
 -- )
+-- local publish = rsteps.step("publish", { depends_on = {"make_manifest", "sign"} }, function()
+--     -- publish
+-- end)
+-- mystepgraph:add_steps(make_manifest, publish)
 -- @endcode
 -- 
 -- @note Relations can be scheduled at any order. Even if a dependency is not yet fully scheduled
@@ -307,10 +322,10 @@ end
 --       step scheduled at a later point. The important bit is that by the time one or more steps
 --       are invoked, all components had their chance to schedule their steps in the graph.
 -- @note Usually scheduling is done earliest possible like `on_load` and invocation of steps are
---       done at later point (like `on_config` or later). Steps can be individually invoked at any
+--       done at later point (like `after_load` or later). Steps can be individually invoked at any
 --       time, and other steps can use this knowledge when they're setting up their relations.
 --
-function _step_graph:with_steps(...)
+function _step_graph:add_steps(...)
     for _, step in {...} do
         self:add(step)
     end
@@ -320,7 +335,7 @@ end
 --!
 -- Easily add a sequence of steps so you don't have to explicitly define their chain of dependency
 -- @code
--- mystepgraph:with_sequence(
+-- mystepgraph:add_sequence(
 --     "step-name", {},
 --     function() --[[ do stuff ]] end, -- "step-name"
 --     function() --[[ do stuff ]] end, -- "step-name2"
@@ -345,16 +360,16 @@ end
 -- )
 -- @endcode
 -- 
--- By default the sequence is composed with dependency (running the last will run the rest), however
--- you can compose the sequence with triggering (running the first will run the rest) via the
--- second argument (options)
+-- By default the sequence is woven with triggering (running the first step will run the rest),
+-- however you can weave the sequence with dependency (running the last step will run the rest) via
+-- the second argument (options)
 -- @code
--- mystepgraph:with_sequence("step-name", {trigger = true}, ...)
+-- mystepgraph:add_sequence("step-name", { depend = true }, ...)
 -- @endcode
 -- 
 -- The second argument can also set up relations to all given steps here
 -- @code
--- mystepgraph:with_sequence("step-name", {triggered_by = "something-else"}, ...)
+-- mystepgraph:add_sequence("step-name", { triggered_by = "something-else" }, ...)
 -- @endcode
 -- Now `something-else` triggers this whole sequence.
 -- 
@@ -363,20 +378,20 @@ end
 --       step scheduled at a later point. The important bit is that by the time one or more steps
 --       are invoked, all components had their chance to schedule their steps in the graph.
 -- @note Usually scheduling is done earliest possible like `on_load` and invocation of steps are
---       done at later point (like `on_config` or later). Steps can be individually invoked at any
+--       done at later point (like `after_load` or later). Steps can be individually invoked at any
 --       time, and other steps can use this knowledge when they're setting up their relations.
 -- 
-function _step_graph:with_sequence(name, options, ...)
+function _step_graph:add_sequence(name, options, ...)
     local last_name = name
     local previous_name = nil
     local idx = 1
     for _, func in ipairs({...}) do
         local relations = _step:new():merge(options)
         if previous_name then
-            if options.trigger then
-                relations = { triggered_by = previous_name }
-            else
+            if options.depend or options.depends or options.dependency then
                 relations = { depends_on = previous_name }
+            else
+                relations = { triggered_by = previous_name }
             end
         end
         local step_name = idx <= 1 and last_name or last_name .. idx
@@ -399,9 +414,9 @@ function _step_graph:with_sequence(name, options, ...)
     return self
 end
 
-function _step_graph:with_sequence_fenv(name, options, ...)
+function _step_graph:add_sequence_fenv(name, options, ...)
     options.set_fenv = true
-    self:with_sequence(name, options, ...)
+    self:add_sequence(name, options, ...)
 end
 
 function forward() return 2 end
@@ -545,7 +560,7 @@ end
 --!
 -- Get or add a step-graph to a target or any other component which has `data` and `name` members
 --
-function get_steps(target, graph_name)
+function get(target, graph_name)
     local data_name = "steps." .. graph_name
     local target_steps = target:data(data_name)
     if not target_steps then
@@ -583,12 +598,11 @@ end
 --       step scheduled at a later point. The important bit is that by the time one or more steps
 --       are invoked, all components had their chance to schedule their steps in the graph.
 -- @note Usually scheduling is done earliest possible like `on_load` and invocation of steps are
---       done at later point (like `on_config` or later). Steps can be individually invoked at any
+--       done at later point (like `after_load` or later). Steps can be individually invoked at any
 --       time, and other steps can use this knowledge when they're setting up their relations.
 --
 function add_step(target, graph_name, ...)
-    local steps = get_steps(target, graph_name)
-    return steps:add(...)
+    return get(target, graph_name):add(...)
 end
 
 --!
@@ -642,15 +656,13 @@ end
 --       step scheduled at a later point. The important bit is that by the time one or more steps
 --       are invoked, all components had their chance to schedule their steps in the graph.
 -- @note Usually scheduling is done earliest possible like `on_load` and invocation of steps are
---       done at later point (like `on_config` or later). Steps can be individually invoked at any
+--       done at later point (like `after_load` or later). Steps can be individually invoked at any
 --       time, and other steps can use this knowledge when they're setting up their relations.
 --
 function add_sequence(target, graph_name, ...)
-    local steps = get_steps(target, graph_name)
-    return steps:with_sequence(...)
+    return get(target, graph_name):add_sequence(...)
 end
 
 function add_sequence_fenv(target, graph_name, ...)
-    local steps = get_steps(target, graph_name)
-    return steps:with_sequence_fenv(...)
+    return get(target, graph_name):add_sequence_fenv(...)
 end

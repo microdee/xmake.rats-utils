@@ -17,6 +17,9 @@
 -- )
 -- @endcode
 -- 
+-- @warning This only works when this addon is installed manually before invoking an xmake.lua
+--          depending on this addon
+-- 
 -- @note Relations can be scheduled at any order. Even if a dependency is not yet fully scheduled
 --       the step-graph can already create an empty record for it, which can be filled in by the
 --       step scheduled at a later point. The important bit is that by the time one or more steps
@@ -63,6 +66,9 @@ end
 --     }
 -- )
 -- @endcode
+-- 
+-- @warning This only works when this addon is installed manually before invoking an xmake.lua
+--          depending on this addon
 -- 
 -- By default the sequence is composed with dependency (running the last will run the rest), however
 -- you can compose the sequence with triggering (running the first will run the rest) via the

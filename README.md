@@ -86,56 +86,83 @@ A fully customizable graph of steps each declaring their own relationship to oth
 ```lua
 target("rsteps-tests")
     set_kind("phony")
-    add_rules("@addon/rats-utils/rsteps") -- allows more easy scheduling of steps from description scope
-
-    add_step("basic-graph", "1st", {}, function(ctx)
-        print(1)
-    end)
-    add_step("basic-graph", "2nd", { depends_on = "1st" }, function(ctx)
-        print(2)
-    end)
-    add_step("basic-graph", "3rd", { triggered_by = "2nd" }, function(ctx)
-        print(3)
-    end)
-    add_step("basic-graph", "4th", { depends_on = "2nd", triggers = "5th" }) -- function is optional!
-    add_step("basic-graph", "5th", {}, function(ctx)
-        print(5)
+    
+    on_load(function(target)
+        import("@addon.rats-utils.rsteps").get(target, "basic-graph")
+            :add("1st",
+                {},
+                function(ctx)
+                    import("@addon.rats-utils.rtable")
+                    print({1, 2, 3, 4} | rtable.slice(3))
+                end
+            )
+            :add("2nd",
+                { depends_on = "1st" },
+                function(ctx)
+                    print(2)
+                end
+            )
+            :add("3rd",
+                { triggered_by = "2nd" },
+                function(ctx)
+                    print(3)
+                end
+            )
+            :add("4th",
+                {
+                    depends_on = "2nd",
+                    triggers = "5th",
+                    after = "3rd"
+                }
+                -- function is optional!
+            )
+            :add("5th",
+                {},
+                function(ctx)
+                    print(5)
+                end
+            )
     end)
     on_config(function(target)
-        import("@addon.rats-utils.rsteps")
-        rsteps.get_steps(target, "basic-graph"):invoke("4th") -- invoke these steps and their relations
+        -- invoke these steps and their relations
+        import("@addon.rats-utils.rsteps").get(target, "basic-graph"):invoke("4th")
     end)
 ```
 
-Setting up a chain of tasks like this however can be pretty tedious, especially when their depency graph is just a straight line. For that reason you also have `add_sequence` convenience function:
+Setting up a chain of tasks like this may be pretty tedious, especially when their depency graph is just a straight line. For that reason you also have `add_sequence` convenience function:
 
 ```lua
 target("rsteps-tests")
     set_kind("phony")
-    add_rules("@addon/rats-utils/rsteps") -- allows more easy scheduling of steps from description scope
-
-    -- steps are woven together via dependency by default, so last step depends on previous one
-    -- and all steps are executed if the last step is invoked
-    add_sequence("sequence-graph-dep", "seq", {}, 
-        function() print(1) end,
-        function() print(2) end,
-        function() print(3) end,
-        function() print(4) end
-    )
     
-    -- OR steps may be woven together via triggering, so first step triggers the second
-    -- and all steps are executed if the first step is invoked
-    add_sequence("sequence-graph-trig", "seq", { trigger = true },
-        function() print(1) end,
-        function() print(2) end,
-        function() print(3) end,
-        function() print(4) end
-    )
+    on_load(function(target)
+        import("@addon.rats-utils.rsteps")
+        
+        -- steps are woven together via triggering by default, so first step triggers the second
+        -- and all steps are executed if the first step is invoked
+        rsteps.add_sequence(target, "sequence-graph-trig", "seq",
+            {},
+            function() print(1) end,
+            function() print(2) end,
+            function() print(3) end,
+            function() print(4) end
+        )
+        
+        -- OR steps may be woven together via dependency, so last step depends on previous one
+        -- and all steps are executed if the last step is invoked
+        rsteps.add_sequence(target, "sequence-graph-dep", "seq",
+            { depend = true },
+            function() print(1) end,
+            function() print(2) end,
+            function() print(3) end,
+            function() print(4) end
+        )
+    end)
     
     on_config(function(target)
         import("@addon.rats-utils.rsteps")
-        rsteps.get_steps(target, "sequence-graph-dep"):invoke("seq4")
-        rsteps.get_steps(target, "sequence-graph-trig"):invoke("seq")
+        rsteps.get(target, "sequence-graph-trig"):invoke("seq")
+        rsteps.get(target, "sequence-graph-dep"):invoke("seq4")
     end)
 ```
 
@@ -143,35 +170,48 @@ You can also name steps individually in `add_sequence`, which is actually recomm
 
 ```lua
 rule("engine-rule")
-    add_deps("@addon/rats-utils/rsteps") -- allows more easy scheduling of steps from description scope
     on_load(function(target)
-        import("@addon.rats-utils.rsteps")
-        rsteps.add_sequence(target, "engine", "seq", { trigger = true }, 
-            { "intake", function() print(1) end },
-            { "compress", function() print(2) end },
-            { "combust", function() print(3) end },
-            { "exhaust", function() print(4) end }
-        )
+        import("@addon.rats-utils.rsteps").get(target, "engine")
+            :add_sequence("seq",
+                {}, 
+                { "intake", function() print(1) end },
+                { "compress", function() print(2) end },
+                { "combust", function() print(3) end },
+                { "exhaust", function() print(4) end }
+            )
+            :add("startup",
+                {},
+                function(ctx)
+                    print("Something early")
+                end
+            )
+    end)
+
+    -- In order to allow scheduling in time for target descriptions 'after_load' should be the
+    -- earliest time steps are invoked. Don't invoke steps in `on_load`
+    after_load(function(target)
+        import("@addon.rats-utils.rsteps").get(target, "engine"):invoke("startup")
     end)
     
     on_config(function(target)
-        import("@addon.rats-utils.rsteps")
-        rsteps.get_steps(target, "engine"):invoke("intake")
+        import("@addon.rats-utils.rsteps").get(target, "engine"):invoke("intake")
     end)
 
 target("engine")
     set_kind("phony")
     add_rules("engine-rule")
-    add_step(
-        "engine", "spark_plug",
-        {
-            dependent_for = "combust",
-            after = "compress"
-        },
-        function(ctx)
-            print("zap")
-        end
-    )
+    on_load(function(target)
+        import("@addon.rats-utils.rsteps").get(target, "engine")
+            :add("spark_plug",
+                {
+                    dependent_for = "combust",
+                    after = "compress"
+                },
+                function(ctx)
+                    print("zap")
+                end
+            )
+    end)
 ```
 
-Actually a step-graph can be created in any context in the script scope, not just for targets. Only the description scope API is bound currently to targets. A global one could be also nice (TODO).
+Actually a step-graph can be created in any context in the script scope, not just for targets. Only the description scope API is bound currently to targets. A global one could be also nice however the more I think about it the more useless it seems.
