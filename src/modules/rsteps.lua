@@ -573,6 +573,8 @@ function get(target, graph_name)
     return target_steps
 end
 
+function main(...) return get(...) end
+
 --!
 -- Add a step to a step-graph associated with a target or any other component which has `data` and
 -- `name` members.

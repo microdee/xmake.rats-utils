@@ -1,6 +1,6 @@
 
-add_repositories("xrepo-md https://github.com/microdee/xmake-repo.git md")
-add_addons("rats-utils")
+-- add_repositories("xrepo-md https://github.com/microdee/xmake-repo.git md")
+-- add_addons("rats-utils")
 
 target("rtable-tests")
     set_kind("phony")
@@ -23,7 +23,7 @@ target("rsteps-tests")
     set_kind("phony")
     -- set_enabled(false)
     on_load(function(target)
-        import("@addon.rats-utils.rsteps").get(target, "basic-graph")
+        import("@addon.rats-utils.rsteps")(target, "basic-graph")
             :add("1st",
                 {},
                 function(ctx)
@@ -80,8 +80,8 @@ target("rsteps-tests")
 
     on_config(function(target)
         import("@addon.rats-utils.rsteps")
-        rsteps.get(target, "basic-graph"):invoke("4th")
-        rsteps.get(target, "basic-graph"):invoke("nonexistent")
-        rsteps.get(target, "sequence-graph-trig"):invoke("seq3")
-        rsteps.get(target, "sequence-graph-dep"):invoke("seq5")
+        rsteps(target, "basic-graph"):invoke("4th")
+        rsteps(target, "basic-graph"):invoke("nonexistent")
+        rsteps(target, "sequence-graph-trig"):invoke("seq3")
+        rsteps(target, "sequence-graph-dep"):invoke("seq5")
     end)

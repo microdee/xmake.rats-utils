@@ -88,7 +88,7 @@ target("rsteps-tests")
     set_kind("phony")
     
     on_load(function(target)
-        import("@addon.rats-utils.rsteps").get(target, "basic-graph")
+        import("@addon.rats-utils.rsteps")(target, "basic-graph")
             :add("1st",
                 {},
                 function(ctx)
@@ -125,7 +125,7 @@ target("rsteps-tests")
     end)
     on_config(function(target)
         -- invoke these steps and their relations
-        import("@addon.rats-utils.rsteps").get(target, "basic-graph"):invoke("4th")
+        import("@addon.rats-utils.rsteps")(target, "basic-graph"):invoke("4th")
     end)
 ```
 
@@ -161,8 +161,8 @@ target("rsteps-tests")
     
     on_config(function(target)
         import("@addon.rats-utils.rsteps")
-        rsteps.get(target, "sequence-graph-trig"):invoke("seq")
-        rsteps.get(target, "sequence-graph-dep"):invoke("seq4")
+        rsteps(target, "sequence-graph-trig"):invoke("seq")
+        rsteps(target, "sequence-graph-dep"):invoke("seq4")
     end)
 ```
 
@@ -171,7 +171,7 @@ You can also name steps individually in `add_sequence`, which is actually recomm
 ```lua
 rule("engine-rule")
     on_load(function(target)
-        import("@addon.rats-utils.rsteps").get(target, "engine")
+        import("@addon.rats-utils.rsteps")(target, "engine")
             :add_sequence("seq",
                 {}, 
                 { "intake", function() print(1) end },
@@ -190,18 +190,18 @@ rule("engine-rule")
     -- In order to allow scheduling in time for target descriptions 'after_load' should be the
     -- earliest time steps are invoked. Don't invoke steps in `on_load`
     after_load(function(target)
-        import("@addon.rats-utils.rsteps").get(target, "engine"):invoke("startup")
+        import("@addon.rats-utils.rsteps")(target, "engine"):invoke("startup")
     end)
     
     on_config(function(target)
-        import("@addon.rats-utils.rsteps").get(target, "engine"):invoke("intake")
+        import("@addon.rats-utils.rsteps")(target, "engine"):invoke("intake")
     end)
 
 target("engine")
     set_kind("phony")
     add_rules("engine-rule")
     on_load(function(target)
-        import("@addon.rats-utils.rsteps").get(target, "engine")
+        import("@addon.rats-utils.rsteps")(target, "engine")
             :add("spark_plug",
                 {
                     dependent_for = "combust",
