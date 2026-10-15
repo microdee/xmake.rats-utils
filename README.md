@@ -5,16 +5,22 @@ Commonly usable very generic utilities for [xmake](https://xmake.io) for other x
 Through xrepo in your `xmake.lua`
 
 ```lua
--- add_repositories until it's not yet available in mainline xrepo
-add_repositories("xrepo-md https://github.com/microdee/xmake-repo.git md")
 add_addons("rats-utils")
 ```
 
-Or manual installation:
+<details><summary>Or manual installation:</summary>
+
+```
+xmake addon --install rats-utils
+```
+
+Or even more manual installation:
 
 ```
 xmake addon --install github:microdee/xmake.rats-utils
 ```
+
+</details>
 
 ## Features
 

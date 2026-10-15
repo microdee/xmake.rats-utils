@@ -1,7 +1,4 @@
 
--- add_repositories("xrepo-md https://github.com/microdee/xmake-repo.git md")
--- add_addons("rats-utils")
-
 target("rtable-tests")
     set_kind("phony")
     on_load(function(target)
@@ -21,7 +18,6 @@ target("rtable-tests")
 
 target("rsteps-tests")
     set_kind("phony")
-    -- set_enabled(false)
     on_load(function(target)
         import("@addon.rats-utils.rsteps")(target, "basic-graph")
             :add("1st",
